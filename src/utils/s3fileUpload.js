@@ -1,8 +1,5 @@
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 
-import ffmpeg from 'fluent-ffmpeg';
-import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
-
 import fs from 'fs';
 
 const { AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_REGION, AWS_S3_BUCKET_NAME } = process.env;
@@ -11,30 +8,6 @@ if (!AWS_ACCESS_KEY_ID || !AWS_SECRET_ACCESS_KEY || !AWS_REGION || !AWS_S3_BUCKE
     throw new Error("Missing AWS configuration");
 }
 
-// Set the path to the ffmpeg binary
-ffmpeg.setFfmpegPath(ffmpegInstaller.path);
-
-// Function to get file type and video duration
-const getFileInfo = (filePath) => {
-    return new Promise((resolve, reject) => {
-
-        ffmpeg.ffprobe(filePath, (err, metadata) => {
-            if (err) {
-                return reject(err);
-            }
-
-            // Get the format name (file type)
-            const fileType = metadata.format.format_name;
-
-            // Check if it's a video and get the duration
-            const isVideo = metadata.streams.some(stream => stream.codec_type === 'video');
-            const duration = isVideo ? metadata.format.duration : null;
-
-            resolve({ fileType, isVideo, duration });
-        });
-    });
-};
-
 const s3 = new S3Client({
     region: AWS_REGION,
     credentials: {
@@ -42,6 +15,8 @@ const s3 = new S3Client({
         secretAccessKey: AWS_SECRET_ACCESS_KEY,
     },
 });
+
+// uploading file
 
 export async function uploadFileS3(localFilePath, s3Key) {
     try {
@@ -82,7 +57,32 @@ export async function uploadFileS3(localFilePath, s3Key) {
     }
 }
 
+// geting file
+
 export async function getFile(objKey) {
+    try {
+        if (!objKey) {
+            return null;
+        }
+
+        const params = {
+            Bucket:  AWS_S3_BUCKET_NAME,
+            Key: objKey,
+        };
+
+        const command = new GetObjectCommand(params);
+        const response = await s3.send(command);
+
+        return response.Body;
+    } catch (error) {
+        return null;
+    }
+}
+
+// delting file with objKey
+
+export async function deleteS3File(objKey) {
+
     try {
         if (!objKey) {
             return null;
@@ -93,11 +93,12 @@ export async function getFile(objKey) {
             Key: objKey,
         };
 
-        const command = new GetObjectCommand(params);
+        const command = new DeleteObjectCommand(params);
         const response = await s3.send(command);
 
-        return response.Body; // The Body is a stream
+        return response;
+
     } catch (error) {
-        return null;
+        return null
     }
 }

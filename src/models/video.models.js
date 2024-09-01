@@ -1,48 +1,53 @@
 import mongoose, { Schema } from "mongoose";
 import mongooseAggregatePaginate from "mongoose-aggregate-paginate-v2";
 
-const videoSchema = new Schema({
+const videoSchema = new Schema(
+  {
     title: {
-        type: String,
-        require: true,
-        min: [1, "Title atlast 1 charecter long"],
-        index:true
+      type: String,
+      required: [true, "Title is required"],
+      minlength: [1, "Title must be at least 1 character long"],
+      index: true,
     },
     description: {
-        type: String,
-        require: true,
-        min:[5,"Description atlast 5 charecter long"]
+      type: String,
+      required: [true, "Description is required"],
+      minlength: [1, "Description must be at least 1 character long"],
+      index: true,
     },
     videoUrl: {
-        type: String,
-        require:true,
+      type: String,
+      required: [true, "Video URL is required"],
     },
     thumbnail: {
-        type: String,
-        require:true,
+      type: String,
+      required: [true, "Thumbnail is required"],
     },
     owner: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref:"User",
-        require:true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Owner is required"],
     },
     duration: {
-        type: Number,
-        require: true,
-        default:0
+      type: Number,
+      default: 0,
     },
     views: {
-        type: Number,
-        default:0,
-        require:true,
+      type: Number,
+      default: 0,
     },
     isPublished: {
-        type: Boolean,
-        default:true
-    }
-}, { timestamps: true })
+      type: Boolean,
+      require:true,
+      default: true,
+    },
+  },
+  { timestamps: true }
+);
 
-videoSchema.plugin(mongooseAggregatePaginate)
+// Create a text index for full-text search on title and description
+videoSchema.index({ title: "text", description: "text" });
 
+videoSchema.plugin(mongooseAggregatePaginate);
 
-export const Video = mongoose.model("Video",videoSchema)
+export const Video = mongoose.model("Video", videoSchema);

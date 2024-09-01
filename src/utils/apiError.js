@@ -1,9 +1,4 @@
-
-
-class ApiError extends Error{
-
-    // overwriting error class for custom error response
-    
+class ApiError extends Error {
     constructor(
         statusCode,
         message = "Something went wrong",
@@ -19,9 +14,9 @@ class ApiError extends Error{
         if (stack) {
             this.stack = stack;
         } else {
-            Error.captureStackTrace(this, this.constructer);
+            Error.captureStackTrace(this, this.constructor);
         }
     }
-};
+}
 
 export { ApiError };
