@@ -1,6 +1,5 @@
 
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { ApiError } from "../utils/apiError.js";
 import { ApiResponse } from "../utils/apiResponse.js";
 
 import { Playlist } from "../models/playlist.models.js";
@@ -21,9 +20,11 @@ const createPlaylist = asyncHandler(async (req, res) => {
     } = req.body;
 
     if ((String(playlistTitle).length < 1 && !playlistIsPublic)) {
-        throw new ApiError(
-            400,
-            "Property not given properly."
+        return res.status(400).json(
+            new ApiResponse(
+                400,
+                "Property not given properly."
+            )
         )
     }
 
@@ -35,9 +36,11 @@ const createPlaylist = asyncHandler(async (req, res) => {
     );
 
     if (isPlayListExist) {
-        throw new ApiError(
-            401,
-            "Playlist alreay exist with this Title."
+        return res.status(401).json(
+            new ApiResponse(
+                401,
+                "Playlist alreay exist with this Title."
+            )
         )
     }
 
@@ -49,9 +52,11 @@ const createPlaylist = asyncHandler(async (req, res) => {
     });
 
     if (!newPlayList) {
-        throw new ApiError(
-            500,
-            "Somthing goes wrong while creating playlist."
+        return res.status(500).json(
+            new ApiResponse(
+                500,
+                "Somthing goes wrong while creating playlist."
+            )
         )
     }
 
@@ -75,31 +80,41 @@ const addVideos = asyncHandler(async (req, res) => {
 
     // Validate playlist ID
     if (!mongoose.isValidObjectId(playListId)) {
-        throw new ApiError(400, "Invalid Playlist ID.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid Playlist ID.")
+        );
     }
 
     // Validate video list
     if (!Array.isArray(videoList) || videoList.length === 0) {
-        throw new ApiError(400, "Video list not provided or empty.");
+        return res.status(400).json(
+            new ApiResponse(400, "Video list not provided or empty.")
+        );
     }
 
     // Check if the playlist exists
     const playList = await Playlist.findById(playListId);
 
     if (!playList) {
-        throw new ApiError(400, "Playlist does not exist.");
+        return res.status(400).json(
+            new ApiResponse(400, "Playlist does not exist.")
+        );
     }
 
     // Check if the user is the owner of the playlist
     if (!playList.owner.equals(uId)) {
-        throw new ApiError(403, "You are not authorized to modify this playlist.");
+        return res.status(403).json(
+            new ApiResponse(403, "You are not authorized to modify this playlist.")
+        );
     }
 
     // Filter out invalid video IDs
     const validVideoIds = videoList.filter(id => mongoose.isValidObjectId(id));
 
     if (validVideoIds.length === 0) {
-        throw new ApiError(400, "No valid video IDs provided.");
+        return res.status(400).json(
+            new ApiResponse(400, "No valid video IDs provided.")
+        );
     }
 
     // Check if each video ID exists in the database
@@ -114,7 +129,9 @@ const addVideos = asyncHandler(async (req, res) => {
     const filteredVideoIds = existingVideoIds.filter(id => id !== null);
 
     if (filteredVideoIds.length === 0) {
-        throw new ApiError(400, "None of the provided video IDs exist.");
+        return res.status(400).json(
+            new ApiResponse(400, "None of the provided video IDs exist.")
+        );
     }
 
     // Update the playlist with new valid video IDs and remove duplicates
@@ -137,24 +154,32 @@ const arrangeVideoLists = asyncHandler(async (req, res) => {
 
     // Validate playlist ID
     if (!mongoose.isValidObjectId(playListId)) {
-        throw new ApiError(400, "Invalid Playlist ID.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid Playlist ID.")
+        );
     }
 
     // Validate new order
     if (!Array.isArray(newOrder) || newOrder.length === 0) {
-        throw new ApiError(400, "New order list not provided or empty.");
+        return res.status(400).json(
+            new ApiResponse(400, "New order list not provided or empty.")
+        );
     }
 
     // Check if the playlist exists
     const playList = await Playlist.findById(playListId);
 
     if (!playList) {
-        throw new ApiError(404, "Playlist does not exist.");
+        return res.status(404).json(
+            new ApiResponse(404, "Playlist does not exist.")
+        );
     }
 
     // Check if the user is the owner of the playlist
     if (!playList.owner.equals(uId)) {
-        throw new ApiError(403, "You are not authorized to modify this playlist.");
+        return res.status(403).json(
+            new ApiResponse(403, "You are not authorized to modify this playlist.")
+        );
     }
 
     // Ensure all IDs in the new order are valid ObjectIDs
@@ -165,7 +190,9 @@ const arrangeVideoLists = asyncHandler(async (req, res) => {
         return new mongoose.Types.ObjectId(id);
     });
     if (validNewOrder.length !== newOrder.length) {
-        throw new ApiError(400, "Invalid video IDs provided.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid video IDs provided.")
+        );
     }
 
     // Update the playlist with the new order of video IDs
@@ -189,31 +216,41 @@ const removeVideos = asyncHandler(async (req, res) => {
 
     // Validate playlist ID
     if (!mongoose.isValidObjectId(playListId)) {
-        throw new ApiError(400, "Invalid Playlist ID.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid Playlist ID.")
+        );
     }
 
     // Validate video list
     if (!Array.isArray(videoList) || videoList.length === 0) {
-        throw new ApiError(400, "Video list not provided or empty.");
+        return res.status(400).json(
+            new ApiResponse(400, "Video list not provided or empty.")
+        );
     }
 
     // Check if the playlist exists
     const playList = await Playlist.findById(playListId);
 
     if (!playList) {
-        throw new ApiError(400, "Playlist does not exist.");
+        return res.status(404).json(
+            new ApiResponse(404, "Playlist does not exist.")
+        );
     }
 
     // Check if the user is the owner of the playlist
     if (!playList.owner.equals(uId)) {
-        throw new ApiError(403, "You are not authorized to modify this playlist.");
+        return res.status(403).json(
+            new ApiResponse(403, "You are not authorized to modify this playlist.")
+        );
     }
 
     // Filter out invalid video IDs
     const validVideoIds = videoList.filter(id => mongoose.isValidObjectId(id));
 
     if (validVideoIds.length === 0) {
-        throw new ApiError(400, "No valid video IDs provided.");
+        return res.status(400).json(
+            new ApiResponse(400, "No valid video IDs provided.")
+        );
     }
 
     // Remove the specified videos from the playlist
@@ -237,19 +274,25 @@ const removeAllVideos = asyncHandler(async (req, res) => {
 
     // Validate playlist ID
     if (!mongoose.isValidObjectId(playListId)) {
-        throw new ApiError(400, "Invalid Playlist ID.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid Playlist ID.")
+        );
     }
 
     // Check if the playlist exists
     const playList = await Playlist.findById(playListId);
 
     if (!playList) {
-        throw new ApiError(400, "Playlist does not exist.");
+        return res.status(400).json(
+            new ApiResponse(400, "Playlist does not exist.")
+        );
     }
 
     // Check if the user is the owner of the playlist
     if (!playList.owner.equals(uId)) {
-        throw new ApiError(403, "You are not authorized to modify this playlist.");
+        return res.status(403).json(
+            new ApiResponse(403, "You are not authorized to modify this playlist.")
+        );
     }
 
     // Clear all videos from the playlist
@@ -275,19 +318,25 @@ const updatePlaylistDetails = asyncHandler(async (req, res) => {
 
     // Validate playlist ID
     if (!mongoose.isValidObjectId(playListId)) {
-        throw new ApiError(400, "Invalid Playlist ID.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid Playlist ID.")
+        );
     }
 
     // Check if the playlist exists
     const playList = await Playlist.findById(playListId);
 
     if (!playList) {
-        throw new ApiError(400, "Playlist does not exist.");
+        return res.status(400).json(
+            new ApiResponse(400, "Playlist does not exist.")
+        );
     }
 
     // Check if the user is the owner of the playlist
     if (!playList.owner.equals(uId)) {
-        throw new ApiError(403, "You are not authorized to modify this playlist.");
+        return res.status(403).json(
+            new ApiResponse(403, "You are not authorized to modify this playlist.")
+        );
     }
 
     // Update only fields that are different
@@ -330,19 +379,25 @@ const deletePlaylist = asyncHandler(async (req, res) => {
 
     // Validate playlist ID
     if (!mongoose.isValidObjectId(playListId)) {
-        throw new ApiError(400, "Invalid Playlist ID.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid Playlist ID.")
+        );
     }
 
     // Check if the playlist exists
     const playList = await Playlist.findById(playListId);
 
     if (!playList) {
-        throw new ApiError(404, "Playlist does not exist.");
+        return res.status(404).json(
+            new ApiResponse(404, "Playlist does not exist.")
+        );
     }
 
     // Check if the user is the owner of the playlist
     if (!playList.owner.equals(uId)) {
-        throw new ApiError(403, "You are not authorized to delete this playlist.");
+        return res.status(403).json(
+            new ApiResponse(403, "You are not authorized to delete this playlist.")
+        );
     }
 
     // Delete the playlist
@@ -361,7 +416,9 @@ const currentUserPlaylist = asyncHandler(async (req, res) => {
 
     // Validate user ID
     if (!uId || !mongoose.isValidObjectId(uId)) {
-        throw new ApiError(400, "Invalid User ID.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid User ID.")
+        );
     }
 
     // Fetch all playlists for the current user
@@ -429,7 +486,9 @@ const currentUserPlaylist = asyncHandler(async (req, res) => {
 
     // Check if any playlists are found
     if (!playlists || playlists.length === 0) {
-        throw new ApiError(404, "No playlists found for the current user.");
+        return res.status(404).json(
+            new ApiResponse(404, "No playlists found for the current user.")
+        );
     }
 
     return res.status(200).json(
@@ -444,7 +503,9 @@ const getChannalPlaylist = asyncHandler(async (req, res) => {
     
     // Validate channel ID
     if (!mongoose.isValidObjectId(String(channelId))) {
-        throw new ApiError(400, "Invalid Channel ID.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid Channel ID.")
+        );
     }
 
     // Find public playlists for the specified channel
@@ -537,7 +598,9 @@ const getPlaylist = asyncHandler(async (req, res) => {
 
     // Validate playlist ID
     if (!mongoose.isValidObjectId(playlistId)) {
-        throw new ApiError(400, "Invalid Playlist ID.");
+        return res.status(400).json(
+            new ApiResponse(400, "Invalid Playlist ID.")
+        );
     }
 
     // Find the playlist by ID and populate video details

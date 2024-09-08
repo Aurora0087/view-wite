@@ -101,11 +101,12 @@ const updateCommunity = asyncHandler(async (req, res) => {
 
     const uId = req.user._id || "";
 
+
     const communityImage = req.files?.newimg ? req.files?.newimg[0] : null;
 
     if (!mongoose.isValidObjectId(communityId)) {
 
-        deleteLocalFiles([communityImageLocalPath]);
+        deleteLocalFiles([communityImage.path]);
         return res.status(400).json(
             new ApiResponse(
                 400,
@@ -178,7 +179,7 @@ const updateCommunity = asyncHandler(async (req, res) => {
         }
     ]);
 
-    if (!community || community.length() === 0) {
+    if (!community || community.length === 0) {
 
         if (communityImage) deleteLocalFiles([communityImage.path]);
         return res.status(404).json(
@@ -192,7 +193,7 @@ const updateCommunity = asyncHandler(async (req, res) => {
 
     if ((String(community[0]?.owner || "404") !== String(new mongoose.Types.ObjectId(uId) || ""))) {
 
-        deleteLocalFiles([communityImageLocalPath]);
+        deleteLocalFiles([communityImage.path]);
         return res.status(403).json(
             new ApiResponse(
                 403,
@@ -203,10 +204,9 @@ const updateCommunity = asyncHandler(async (req, res) => {
     }
 
     let communityImageFileName = community[0]?.image || "";
+    const communityImageLocalPath = communityImage?.path || "";
 
     if (communityImage) {
-
-        const communityImageLocalPath = communityImage?.path;
 
         if (!String(communityImage?.mimetype).includes("image/")) {
 
@@ -495,7 +495,7 @@ const getChannelCommunity = asyncHandler(async (req, res) => {
 const getCommunityById = asyncHandler(async (req, res) => {
 
     const { communityId } = req.query;
-    const uId = req.user?._id; // Get the user ID of the current logged-in user
+    const uId = req.user?._id || ""; // Get the user ID of the current logged-in user
 
     // Validate community ID
     if (!mongoose.isValidObjectId(communityId)) {
@@ -548,9 +548,14 @@ const getCommunityById = asyncHandler(async (req, res) => {
                     likeCount: { $size: "$likes" },
                     channel: { $first: "$ownerChannel" },
                     canUpdate: {
-                        $cond: { $eq: ["$owner", new mongoose.Types.ObjectId(uId) || ""] },
-                        then: true,
-                        else: false
+                        $cond: {
+                            if: {
+                                $eq: ["$owner", new mongoose.Types.ObjectId(uId)]
+                            },
+                            then: true,
+                            else: false
+                        },
+
                     }
                 }
             },
@@ -565,7 +570,7 @@ const getCommunityById = asyncHandler(async (req, res) => {
                     channel: 1,
                     isPublic: 1,
                     owner: 1,
-                    canUpdate:1
+                    canUpdate: 1
                 },
             },
         ]);
@@ -574,16 +579,6 @@ const getCommunityById = asyncHandler(async (req, res) => {
         if (!community || community.length === 0) {
             return res.status(404).json(
                 new ApiResponse(404, {}, "Community not found.")
-            );
-        }
-
-        // Check if the user is the owner or if the community is public
-        if (
-            String(community[0]?.owner) !== String(uId) &&
-            !community[0]?.isPublic
-        ) {
-            return res.status(403).json(
-                new ApiResponse(403, {}, "You are not authorized to view this community.")
             );
         }
 

@@ -4,11 +4,15 @@ import {
     verifyJWT,
     getUserDetails
 } from "../middlewares/auth.middleware.js";
+
+import { upload } from "../middlewares/multer.middleware.js";
+
 import {
     createCommunity,
     deleteCommunity,
     getChannelCommunity,
     getCommunityById,
+    getCurrentUserCommunity,
     updateCommunity
 } from "../controllers/community.controller.js";
 
@@ -17,14 +21,25 @@ import {
 const communityRouter = Router();
 
 
-communityRouter.use("/create").post(verifyJWT, createCommunity);
-communityRouter.use("/update").post(verifyJWT, updateCommunity);
+communityRouter.route("/create").post(upload.fields([
+    {
+        name: "img",
+        maxCount:1
+    }
+]), verifyJWT, createCommunity);
 
-communityRouter.use("/delete").delete(verifyJWT, deleteCommunity);
+communityRouter.route("/update").post(upload.fields([
+    {
+        name: "newimg",
+        maxCount:1
+    }
+]),verifyJWT, updateCommunity);
 
-communityRouter.use("/current").post(verifyJWT, createCommunity);
-communityRouter.use("/channel").post(getChannelCommunity);
-communityRouter.use("/get").get(getUserDetails, getCommunityById);
+communityRouter.route("/delete").delete(verifyJWT, deleteCommunity);
+
+communityRouter.route("/current").post(verifyJWT, getCurrentUserCommunity);
+communityRouter.route("/channel").post(getUserDetails,getChannelCommunity);
+communityRouter.route("/get").get(getUserDetails, getCommunityById);
 
 
 export default communityRouter;

@@ -2,8 +2,6 @@ import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
-import { ApiError } from "./utils/apiError.js";
-
 const app = express();
 
 
@@ -41,6 +39,8 @@ import videoRouter from "./routers/video.routers.js";
 import subscriptionRouter from "./routers/subscription.routers.js";
 import playlistRouter from "./routers/playlist.routers.js";
 import communityRouter from "./routers/community.routers.js";
+import commentRouter from "./routers/comment.routers.js";
+import likeRouter from "./routers/like.routers.js";
 
 //routes
 
@@ -56,7 +56,11 @@ app.use("/api/v1/videos", videoRouter);
 
 app.use("/api/v1/playlist", playlistRouter);
 
-app.use("/api/v1/community", communityRouter)
+app.use("/api/v1/community", communityRouter);
+
+app.use("/api/v1/comments", commentRouter);
+
+app.use("/api/v1/likes", likeRouter);
 
 app.use("/api/v1/file", fileRouter);
 

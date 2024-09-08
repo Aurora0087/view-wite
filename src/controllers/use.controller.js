@@ -9,6 +9,7 @@ import { deleteS3File, uploadFileS3 } from "../utils/s3fileUpload.js";
 import { deleteLocalFiles } from "../utils/localFile.js";
 
 import mongoose from "mongoose";
+import { WatchHistory } from "../models/watchHistory.models.js";
 
 
 
@@ -672,7 +673,14 @@ const getChannalInfo = asyncHandler(async (req, res) => {
     ]);
 
     if (!channal[0]) {
-        throw new ApiError(401, `Can't found channal ${channalUserName}.`);
+        return res.status(404).json(
+            new ApiResponse(404,
+                {
+                    channal: channal[0]
+                },
+                `Can't found channal ${channalUserName}.`
+            )
+        )
     }
 
 
@@ -689,64 +697,76 @@ const getChannalInfo = asyncHandler(async (req, res) => {
 // get current users watch history
 
 const getUserWatchHistory = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10 } = req.query; // Get pagination options from query parameters
 
-    const user = await User.aggregate([
-
-        // find current user
+    // Create aggregation pipeline
+    const aggregate = WatchHistory.aggregate([
+        // Find current user
         {
             $match: {
-                _id: new mongoose.Types.ObjectId(req.user._id)
+                owner: new mongoose.Types.ObjectId(req.user._id)
             }
         },
-        // get watch history videos
+        // Get watch history videos
         {
             $lookup: {
                 from: "videos",
                 foreignField: "_id",
-                localField: "watchHistory",
+                localField: "video",
                 as: "watchHistory",
-
-                // nested pipeline
-                pipeline: [{
-                    // geting owner details
-                    $lookup: {
-                        from: "users",
-                        foreignField: "_id",
-                        localField: "owner",
-                        as: "owner",
-                        pipeline: []
-                    }
-                },
-                {
-                    $project: {
-                        avatar: 1,
-                        username: 1,
-                        firstName: 1,
-                        lastName: 1
-                    }
-                },
-                // only taking fist element from arr
-                {
-                    $addFields: {
-                        owner: {
-                            $first: "$owner"
+                pipeline: [
+                    {
+                        // Get owner details
+                        $lookup: {
+                            from: "users",
+                            foreignField: "_id",
+                            localField: "owner",
+                            as: "owner",
+                            pipeline: [
+                                {
+                                    $project: {
+                                        avatar: 1,
+                                        username: 1,
+                                        firstName: 1,
+                                        lastName: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    // Only taking first element from array
+                    {
+                        $addFields: {
+                            owner: { $first: "$owner" }
                         }
                     }
-                },
                 ]
             }
         }
-    ])
+    ]);
+
+    // Apply pagination using mongoose-aggregate-paginate-v2
+    const options = {
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
+    };
+
+    const watchHistory = await WatchHistory.aggregatePaginate(aggregate, options);
 
     return res.status(200).json(
-        new ApiResponse(200,
+        new ApiResponse(
+            200,
             {
-                watchHistory: user[0]?.watchHistory
+                watchHistory: watchHistory.docs, // Return the paginated documents
+                totalDocs: watchHistory.totalDocs, // Total documents
+                totalPages: watchHistory.totalPages, // Total pages
+                page: watchHistory.page, // Current page
+                limit: watchHistory.limit // Limit per page
             },
-            "Current users watch history retrived."
+            "Current user's watch history retrieved successfully."
         )
-    )
-})
+    );
+});
 
 export {
     registerUser,
@@ -758,7 +778,6 @@ export {
     updateAvatar,
     updateCoverImage,
     getCurrentUser,
-
-    getChannalInfo,
-    getUserWatchHistory
+    getUserWatchHistory,
+    getChannalInfo
 }

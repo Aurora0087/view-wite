@@ -3,7 +3,7 @@ import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
 import { getUserDetails, verifyJWT } from "../middlewares/auth.middleware.js";
 
-import { deleteVideoContent, getVideoById, recommendedVideos, searchVideos, updateVideoDetails, updateVideoFile, updateVideoThumbnail, uploadVideo } from "../controllers/video.controller.js";
+import { addToWatchHistory, deleteVideoContent, getVideoById, recommendedVideos, searchVideos, updateVideoDetails, updateVideoFile, updateVideoThumbnail, uploadVideo } from "../controllers/video.controller.js";
 
 
 const videoRouter = Router();
@@ -22,6 +22,8 @@ videoRouter.route("/upload").post(upload.fields([
 ]), verifyJWT, uploadVideo);
 
 videoRouter.route("/watch").get(getUserDetails, getVideoById);
+
+videoRouter.route("/addView").post(getUserDetails, addToWatchHistory);
 
 videoRouter.route("/update/details").post(verifyJWT, updateVideoDetails);
 

@@ -59,10 +59,6 @@ const userSchema = new Schema({
     emailVerificationToken: {
         type: String
     },
-    watchHistory: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Video"
-    }],
     lastOnline: {
         type: Date,
         default: Date.now

@@ -9,6 +9,7 @@ import { deleteLocalFiles } from "../utils/localFile.js";
 import { Video } from "../models/video.models.js";
 import mongoose from "mongoose";
 import { getVideoDuration } from "../utils/getVideoDuration.js";
+import { WatchHistory } from "../models/watchHistory.models.js";
 
 // uploas video
 
@@ -34,13 +35,13 @@ const uploadVideo = asyncHandler(async (req, res) => {
 
     if (!video) {
 
-        deleteLocalFiles([video?.path, thumbnail?.path]);
+        deleteLocalFiles([thumbnail?.path]);
         throw new ApiError(400, "Video not given.");
     }
 
     if (!thumbnail) {
 
-        deleteLocalFiles([video?.path, thumbnail?.path]);
+        deleteLocalFiles([video?.path]);
         throw new ApiError(400, "Thumbnail not given.");
     }
 
@@ -193,9 +194,12 @@ const getVideoById = asyncHandler(async (req, res) => {
                     }
                 },
                 canUpdate: {
-                    $cond: { $eq: ["$owner", new mongoose.Types.ObjectId(uId) || ""] },
-                    then: true,
-                    else: false
+                    $cond: {
+                        if: { $eq: ["$owner", new mongoose.Types.ObjectId(uId) || ""] },
+                        then: true,
+                        else: false
+                    },
+
                 }
             }
 
@@ -219,7 +223,9 @@ const getVideoById = asyncHandler(async (req, res) => {
     ]);
 
     if (!video[0]) {
-        throw new ApiError(404, "video don't exist");
+        return res.status(200).json(
+            new ApiResponse(404, "video don't exist")
+        )
     }
 
     return res.status(200).json(
@@ -231,6 +237,62 @@ const getVideoById = asyncHandler(async (req, res) => {
         )
     )
 });
+
+// add to watchHistory and incrise view
+
+const addToWatchHistory = asyncHandler(async (req, res) => {
+
+    const vId = req.query?.v || "";
+    const uId = req.user?._id || "";
+
+    // Validate the video ID
+    if (!mongoose.isValidObjectId(vId)) {
+        throw new ApiError(400, "Video ID not given properly.");
+    }
+
+    // Find the video by ID
+    const video = await Video.findById(vId);
+    if (!video) {
+        return res.status(404).json(
+            new ApiResponse(404, "Video doesn't exist")
+        );
+    }
+
+    video.views += 1;
+    await video.save();
+
+    if (uId !== "") {
+
+        // Check if the video is already in the user's watch history
+        let watchHistory = await WatchHistory.findOne({
+            owner: uId,
+            video: vId,
+        });
+
+        if (!watchHistory) {
+            // Create a new watch history entry if it doesn't exist
+            watchHistory = await WatchHistory.create({
+                owner: uId,
+                video: vId,
+                rewatched: 0
+            });
+        } else {
+            // Increment the rewatched count if it does exist
+            watchHistory.rewatched += 1;
+            await watchHistory.save();
+        }
+
+    }
+
+
+    return res.status(200).json(
+        new ApiResponse(
+            200,
+            "Watch history updated successfully."
+        )
+    );
+});
+
 
 // edit video details
 
@@ -579,5 +641,6 @@ export {
     updateVideoFile,
     deleteVideoContent,
     searchVideos,
-    recommendedVideos
+    recommendedVideos,
+    addToWatchHistory
 }

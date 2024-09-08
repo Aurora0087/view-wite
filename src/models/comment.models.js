@@ -5,7 +5,6 @@ const commentSchama = new Schema({
     owner: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        require: true,
     },
     text: {
         type: String,
@@ -22,6 +21,11 @@ const commentSchama = new Schema({
     parentComment: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Comment"
+    },
+    isDeleted: {
+        type: Boolean,
+        default: false,
+        require:true
     }
 }, { timestamps: true });
 

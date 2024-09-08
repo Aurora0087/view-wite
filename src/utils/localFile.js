@@ -9,7 +9,6 @@ export function deleteLocalFiles(filePath) {
             })
         } catch (error) {
             console.log("Error deleting files from local path.", error);
-
         }
     })
 };

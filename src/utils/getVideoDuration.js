@@ -4,6 +4,7 @@ import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
 // Set the ffmpeg path to use the installed binary
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
 
+
 // Example function using fluent-ffmpeg
 export const getVideoDuration = (filePath) => {
     return new Promise((resolve, reject) => {
