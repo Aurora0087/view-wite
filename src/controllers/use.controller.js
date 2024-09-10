@@ -70,13 +70,18 @@ const registerUser = asyncHandler(async (req, res) => {
     ) {
 
         deleteLocalFiles([avatar?.path, coverImage?.path]);
-        throw new ApiError(400, "All Filds are Require.")
+
+        return res.status(400).json(
+            new ApiResponse(400,{}, "All Filds are Require.")
+        )
     }
 
     if (!emailRegex.test(email)) {
 
         deleteLocalFiles([avatar?.path, coverImage?.path]);
-        throw new ApiError(400, "Invalid email address")
+        return res.status(400).json(
+            new ApiResponse(400,{}, "Invalid email address.")
+        )
     }
 
 
@@ -174,14 +179,27 @@ const loginUser = asyncHandler(async (req, res) => {
     //validate username / email and password
 
     if (!username || !password) {
-        throw new ApiError(400, "Username/Email or Password not given properly.")
+        
+        return res
+        .status(400)
+        .json(
+            new ApiResponse(400,
+                "Username/Email or Password not given properly."
+            )
+        );
     }
 
     if (
         [username, password].some((fild) => String(fild).trim().length < 1)
     ) {
 
-        throw new ApiError(400, "Username/Email or Password can't empty.")
+        return res
+        .status(400)
+        .json(
+            new ApiResponse(400,
+                "Username/Email or Password not given properly."
+            )
+        );
     }
 
 
@@ -192,7 +210,13 @@ const loginUser = asyncHandler(async (req, res) => {
     });
 
     if (!user) {
-        throw new ApiError(404, "User do not exist.");
+        return res
+        .status(404)
+        .json(
+            new ApiResponse(404,
+                "User do not exist."
+            )
+        );
     }
 
     //check password
@@ -200,7 +224,14 @@ const loginUser = asyncHandler(async (req, res) => {
     const isPasswordValid = await user.isPasswordCurrect(password);
 
     if (!isPasswordValid) {
-        throw new ApiError(401, "Password incorrect.")
+        
+        return res
+        .status(401)
+        .json(
+            new ApiResponse(401,
+                "Password incorrect."
+            )
+        );
     }
 
 
@@ -319,7 +350,13 @@ const incomingRefreshToken = asyncHandler(async (req, res) => {
     const token = req.cookies?.refreshToken || req.body?.refreshToken || "";
 
     if (token.length < 1) {
-        throw new ApiError(401, "You dont have RefreshToken, try to login again.");
+        return res
+        .status(401)
+        .json(
+            new ApiResponse(401,
+                "You dont have RefreshToken, try to login again."
+            )
+        );
     }
 
     // decoding token
@@ -330,7 +367,13 @@ const incomingRefreshToken = asyncHandler(async (req, res) => {
     // validating
 
     if (!decodedToken) {
-        throw new ApiError(401, "Invalid refeshToken, try to login again.")
+        return res
+        .status(401)
+        .json(
+            new ApiResponse(401,
+                "Invalid refeshToken, try to login again."
+            )
+        );
     }
 
     const user = await User.findById(decodedToken?.uid || "").select(
@@ -338,14 +381,24 @@ const incomingRefreshToken = asyncHandler(async (req, res) => {
     );
 
     if (!user) {
-        throw new ApiError(401, "Invalid refeshToken, try to login again.")
+        return res
+        .status(401)
+        .json(
+            new ApiResponse(401,
+                "Invalid refeshToken , try to login again."
+            )
+        );
     }
-
-    console.log(token);
 
 
     if (token !== user.refreshToken) {
-        throw new ApiError(401, "RefreshToken expired or using old token, try to login again.")
+        return res
+        .status(401)
+        .json(
+            new ApiResponse(401,
+                "RefreshToken expired or using old token, try to login again."
+            )
+        );
     }
 
     // generate new tokens
